@@ -1,0 +1,77 @@
+{
+    "columns": [
+        "CustomerID",
+        "Gender",
+        "Age",
+        "Annual Income (k$)",
+        "Spending Score (1-100)"
+    ],
+    "numerical_columns": [
+        "CustomerID",
+        "Age",
+        "Annual Income (k$)",
+        "Spending Score (1-100)"
+    ],
+    "categorical_columns": [
+        "Gender"
+    ],
+    "not_useful_columns": [
+        "CustomerID"
+    ],
+    "summary": {
+        "Age": {
+            "count": 200.0,
+            "mean": 38.85,
+            "std": 13.96900733155888,
+            "min": 18.0,
+            "25%": 28.75,
+            "50%": 36.0,
+            "75%": 49.0,
+            "max": 70.0
+        },
+        "Annual Income (k$)": {
+            "count": 200.0,
+            "mean": 60.56,
+            "std": 26.264721165271244,
+            "min": 15.0,
+            "25%": 41.5,
+            "50%": 61.5,
+            "75%": 78.0,
+            "max": 137.0
+        },
+        "Spending Score (1-100)": {
+            "count": 200.0,
+            "mean": 50.2,
+            "std": 25.823521668370173,
+            "min": 1.0,
+            "25%": 34.75,
+            "50%": 50.0,
+            "75%": 73.0,
+            "max": 99.0
+        }
+    },
+    "missing_values": {
+        "Gender": 0,
+        "Age": 0,
+        "Annual Income (k$)": 0,
+        "Spending Score (1-100)": 0
+    },
+    "duplicates": 0,
+    "correlations": {
+        "Age": {
+            "Age": 1.0,
+            "Annual Income (k$)": -0.01239804273606026,
+            "Spending Score (1-100)": -0.32722684603909025
+        },
+        "Annual Income (k$)": {
+            "Age": -0.01239804273606026,
+            "Annual Income (k$)": 1.0,
+            "Spending Score (1-100)": 0.009902848094037497
+        },
+        "Spending Score (1-100)": {
+            "Age": -0.32722684603909025,
+            "Annual Income (k$)": 0.009902848094037497,
+            "Spending Score (1-100)": 1.0
+        }
+    }
+}
