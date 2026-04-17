@@ -11,7 +11,8 @@ def get_data_info(file_path: str) -> dict:
         "summary": data_info.get_summary().to_dict(),
         "missing_values": data_info.check_missing_values().to_dict(),
         "duplicates": int(data_info.check_duplicates()),
-        "correlations": data_info.get_correlations().to_dict()
+        "correlations": data_info.get_correlations().to_dict(),
+        "categorical_summary": data_info.get_categorical_summary()
     }
 
 def store_data_info(file_path: str) -> None:

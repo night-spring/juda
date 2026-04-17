@@ -18,6 +18,7 @@ class LLM:
             huggingfacehub_api_token=HUGGINGFACE_API_KEY,
             model='meta-llama/Llama-3.1-8B-Instruct',
             task='text-generation',
+            temperature=0.3
         )
 
         model = ChatHuggingFace(llm=llm)
