@@ -1,77 +1,54 @@
 {
     "columns": [
-        "CustomerID",
-        "Gender",
-        "Age",
-        "Annual Income (k$)",
-        "Spending Score (1-100)"
+        "Index",
+        "Height",
+        "Weight"
     ],
     "numerical_columns": [
-        "CustomerID",
-        "Age",
-        "Annual Income (k$)",
-        "Spending Score (1-100)"
+        "Index",
+        "Height",
+        "Weight"
     ],
-    "categorical_columns": [
-        "Gender"
-    ],
+    "categorical_columns": [],
     "not_useful_columns": [
-        "CustomerID"
+        "Index"
     ],
     "summary": {
-        "Age": {
+        "Height": {
             "count": 200.0,
-            "mean": 38.85,
-            "std": 13.96900733155888,
-            "min": 18.0,
-            "25%": 28.75,
-            "50%": 36.0,
-            "75%": 49.0,
-            "max": 70.0
+            "mean": 67.9498,
+            "std": 1.9403625936857454,
+            "min": 63.43,
+            "25%": 66.52250000000001,
+            "50%": 67.935,
+            "75%": 69.2025,
+            "max": 73.9
         },
-        "Annual Income (k$)": {
+        "Weight": {
             "count": 200.0,
-            "mean": 60.56,
-            "std": 26.264721165271244,
-            "min": 15.0,
-            "25%": 41.5,
-            "50%": 61.5,
-            "75%": 78.0,
-            "max": 137.0
-        },
-        "Spending Score (1-100)": {
-            "count": 200.0,
-            "mean": 50.2,
-            "std": 25.823521668370173,
-            "min": 1.0,
-            "25%": 34.75,
-            "50%": 50.0,
-            "75%": 73.0,
-            "max": 99.0
+            "mean": 127.22194999999999,
+            "std": 11.960959176403788,
+            "min": 97.9,
+            "25%": 119.89500000000001,
+            "50%": 127.875,
+            "75%": 136.0975,
+            "max": 158.96
         }
     },
     "missing_values": {
-        "Gender": 0,
-        "Age": 0,
-        "Annual Income (k$)": 0,
-        "Spending Score (1-100)": 0
+        "Height": 0,
+        "Weight": 0
     },
     "duplicates": 0,
     "correlations": {
-        "Age": {
-            "Age": 1.0,
-            "Annual Income (k$)": -0.01239804273606026,
-            "Spending Score (1-100)": -0.32722684603909025
+        "Height": {
+            "Height": 1.0,
+            "Weight": 0.5568647346123003
         },
-        "Annual Income (k$)": {
-            "Age": -0.01239804273606026,
-            "Annual Income (k$)": 1.0,
-            "Spending Score (1-100)": 0.009902848094037497
-        },
-        "Spending Score (1-100)": {
-            "Age": -0.32722684603909025,
-            "Annual Income (k$)": 0.009902848094037497,
-            "Spending Score (1-100)": 1.0
+        "Weight": {
+            "Height": 0.5568647346123003,
+            "Weight": 1.0
         }
-    }
+    },
+    "categorical_summary": {}
 }

@@ -17,4 +17,4 @@ def get_data_info(file_path: str) -> dict:
 
 def store_data_info(file_path: str) -> None:
     with open('data/data_info.json', "w") as f:
-        json.dump(get_data_info(file_path), f, indent=4)
+        json.dump(get_data_info(file_path), f, indent=4, default=str)

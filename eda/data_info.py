@@ -25,7 +25,7 @@ class DataInfo:
     def get_categorical_summary(self):
         summary = {}
         for col in self.categorical_columns:
-            summary[col] = self.df[col].value_counts() *100 / len(self.df)
+            summary[col] = (self.df[col].value_counts() *100 / len(self.df)).to_dict()
         return summary
     
     def detect_nunique_columns(self):
