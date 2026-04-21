@@ -10,6 +10,11 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from llm.llm_model import LLM
 from eda.utils import store_data_info
 
+# Force dark theme
+st.markdown("""
+<meta name="theme-color" content="#0f172a">
+""", unsafe_allow_html=True)
+
 # Initialize the LLM if not in session state
 if 'llm' not in st.session_state:
     st.session_state.llm = LLM()
@@ -28,51 +33,45 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .sidebar-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #ff7f0e;
-        margin-bottom: 1rem;
-    }
-    .chat-container {
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        padding: 1rem;
-        margin: 1rem 0;
-        background-color: #f9f9f9;
-    }
-    .user-message {
-        background-color: #e3f2fd;
-        padding: 0.5rem;
-        border-radius: 5px;
-        margin: 0.5rem 0;
-    }
-    .assistant-message {
-        background-color: #f3e5f5;
-        padding: 0.5rem;
-        border-radius: 5px;
-        margin: 0.5rem 0;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Load custom CSS from external files
+def load_css():
+    css_files = ["styles.css", "streamlit_overrides.css"]
+    for css_file in css_files:
+        css_path = os.path.join(os.path.dirname(__file__), css_file)
+        try:
+            with open(css_path, "r") as f:
+                css_content = f.read()
+            st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            st.warning(f"CSS file '{css_file}' not found.")
 
-st.markdown('<div class="main-header">🤖 Juda Chat Assistant</div>', unsafe_allow_html=True)
+# Load JavaScript files
+def load_javascript():
+    js_files = ["scroll_control.js"]
+    for js_file in js_files:
+        js_path = os.path.join(os.path.dirname(__file__), js_file)
+        try:
+            with open(js_path, "r") as f:
+                js_content = f.read()
+            st.markdown(f"<script>{js_content}</script>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            st.warning(f"JavaScript file '{js_file}' not found.")
+
+# Load all CSS files
+load_css()
+
+# Load all JavaScript files
+load_javascript()
+
+st.markdown('<div class="main-header"><h1>🤖 Juda Chat Assistant</h1></div>', unsafe_allow_html=True)
 
 # Sidebar for CSV upload and controls
 with st.sidebar:
     st.markdown('<div class="sidebar-header">📊 Data Upload</div>', unsafe_allow_html=True)
     
+    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv", help="Upload your data file to chat about it")
+    st.markdown('</div>', unsafe_allow_html=True)
     
     if uploaded_file is not None:
         with st.spinner("Processing CSV..."):
@@ -103,15 +102,18 @@ with st.sidebar:
     
     # Display data summary if data is loaded
     if data_uploaded:
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
         with st.expander("📈 Data Summary", expanded=False):
+            st.markdown('<div class="data-summary">', unsafe_allow_html=True)
             try:
                 with open("data/data_info.json", "r") as f:
                     data_info = json.load(f)
                 st.json(data_info)
             except:
                 st.write("Data info not available")
+            st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     
     # Clear data button
     if st.button("🗑️ Remove Data", help="Remove the uploaded data and start fresh"):
@@ -133,7 +135,7 @@ if 'messages' not in st.session_state:
 data_uploaded = 'llm' in st.session_state and st.session_state.llm.data_info is not None
 
 # Main chat area
-st.markdown("### 💬 Chat with Your Data")
+st.markdown('<div class="chat-title">💬 Chat with Your Data</div>', unsafe_allow_html=True)
 
 # Check if data is uploaded
 data_uploaded = 'llm' in st.session_state and st.session_state.llm.data_info is not None
@@ -150,7 +152,7 @@ with st.container():
             st.markdown(message["content"])
 
 # Chat input at the bottom
-st.markdown("---")
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 if data_uploaded:
     if prompt := st.chat_input("Ask me anything about your data...", key="chat_input"):
         # Add user message to chat history
@@ -175,5 +177,9 @@ else:
     st.chat_input("Upload a CSV file first to enable chat...", key="chat_input", disabled=True)
 
 # Footer
-st.markdown("---")
-st.markdown("*Built with Streamlit and LangChain*")
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="footer">
+    Built with ❤️ using <a href="https://streamlit.io" target="_blank">Streamlit</a> and <a href="https://python.langchain.com" target="_blank">LangChain</a>
+</div>
+""", unsafe_allow_html=True)

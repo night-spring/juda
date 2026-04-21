@@ -1,5 +1,5 @@
 import json
-from llm.llm_model import LLM
+from llm_model import LLM
 
 def generate_report():
     data_info = None
