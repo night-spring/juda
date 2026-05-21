@@ -1,16 +1,19 @@
 [project]
-name = "juda"
+name = "backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "python-multipart>=0.0.9",
     "langchain>=1.2.15",
     "langchain-huggingface>=1.2.1",
+    "firebase-admin>=6.5.0",
     "matplotlib>=3.10.8",
     "pandas>=3.0.2",
     "pytest>=9.0.3",
     "python-dotenv>=1.2.2",
     "seaborn>=0.13.2",
-    "streamlit>=1.28.0",
 ]
