@@ -1,0 +1,267 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Crisp Professional White SaaS Design Tokens (Linear/Stripe inspired) */
+  --bg-main: #F8FAFC;           /* Clean, cool slate-white backdrop */
+  --bg-card: #FFFFFF;           /* Clinical pure white card body */
+  --bg-card-hover: #FDFDFD;
+  --border-color: #E2E8F0;       /* Precise cool-gray hairline border */
+  --border-color-hover: #CBD5E1;
+  
+  --text-primary: #0F172A;       /* High-contrast dark slate text */
+  --text-secondary: #475569;     /* Legible dark-slate secondary text */
+  --text-muted: #94A3B8;         /* Cool-slate muted helper text */
+  
+  /* Modern SaaS Indigo Accents */
+  --primary-accent: #4F46E5;     /* Clerk/Stripe Indigo */
+  --primary-accent-hover: #4338CA;
+  --primary-accent-light: #EEF2FF;
+  --primary-accent-border: #C7D2FE;
+  
+  --accent-gradient: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  --text-gradient: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  
+  /* Success & System States */
+  --color-success: #10B981;      /* Emerald Green */
+  --color-warning: #F59E0B;      /* Amber Yellow */
+  --color-danger: #EF4444;       /* Crimson Red */
+
+  /* Modern SaaS Shadow System (Extremely soft and diffuse) */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+  --shadow-premium: 0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+
+  /* Typography */
+  --font-sans: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Subtle, fine dot mesh background typical of developer-centric SaaS products */
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-accent);
+}
+
+/* Base Typographical Elements */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.25;
+}
+
+a {
+  color: var(--primary-accent);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+a:hover {
+  color: var(--primary-accent-hover);
+}
+
+/* Layout Utilities */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Premium SaaS Card Style */
+.glass-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--border-color-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* Premium SaaS Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-accent);
+  color: #FFFFFF;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--primary-accent-hover);
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-sans);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.btn-primary:hover {
+  background: var(--primary-accent-hover);
+  transform: translateY(-0.5px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: all 0.15s ease;
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+  color: var(--text-primary);
+  transform: translateY(-0.5px);
+}
+
+/* Elegant SaaS Badge */
+.gradient-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--primary-accent);
+  background: var(--primary-accent-light);
+  border: 1px solid var(--primary-accent-border);
+  border-radius: 6px;
+}
+
+/* Markdown Rendering Custom Styles - Adjusted for Light SaaS Mode */
+.markdown-content {
+  line-height: 1.625;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content ul, .markdown-content ol {
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-content code {
+  font-family: var(--font-mono);
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #D946EF;
+}
+
+.markdown-content pre {
+  background: #0F172A;
+  border: 1px solid #1E293B;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #F8FAFC;
+  font-size: 0.82rem;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.markdown-content th, .markdown-content td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.markdown-content th {
+  color: var(--text-primary);
+  background: #F8FAFC;
+  font-weight: 600;
+}
