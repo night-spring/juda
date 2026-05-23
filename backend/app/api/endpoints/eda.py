@@ -168,3 +168,38 @@ Please configure `GOOGLE_API_KEY` in your `.env` file with a valid Gemini key to
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+@router.delete("/session/{session_id}", status_code=status.HTTP_200_OK)
+def delete_session(session_id: str):
+    """Delete a session's metadata and visual plots from Firestore and local cache."""
+    try:
+        # 1. Try Firestore database deletion
+        try:
+            firebase_service.delete_session(session_id)
+            using_firebase = True
+        except Exception as e:
+            # Fallback to local memory cache
+            logger.warning(f"Database delete failed, trying local memory cache: {str(e)}")
+            if session_id in LOCAL_SESSION_CACHE:
+                del LOCAL_SESSION_CACHE[session_id]
+                using_firebase = False
+            else:
+                raise KeyError()
+
+        db_status = "Firebase Firestore" if using_firebase else "Local Cache"
+        return {
+            "session_id": session_id,
+            "message": f"Successfully deleted session and all chat history from {db_status}."
+        }
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session '{session_id}' not found."
+        )
+    except Exception as e:
+        logger.error(f"Error in delete session endpoint: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+

@@ -125,4 +125,18 @@ class FirebaseService:
         messages_ref.add(message_data)
         logger.info(f"Added message by {role} to session {session_id} history")
 
+    def delete_session(self, session_id: str) -> None:
+        """Delete a session document and all nested chat message subcollections from Firestore."""
+        self._check_db_ready()
+        
+        # 1. Delete all nested messages first
+        messages_ref = self.db.collection("sessions").document(session_id).collection("messages")
+        messages = messages_ref.stream()
+        for doc in messages:
+            doc.reference.delete()
+            
+        # 2. Delete the parent session document itself
+        self.db.collection("sessions").document(session_id).delete()
+        logger.info(f"Deleted Firestore session document '{session_id}' and all nested messages.")
+
 firebase_service = FirebaseService()
