@@ -6,3 +6,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     session_id: str
     response: str
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str

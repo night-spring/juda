@@ -4,50 +4,100 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { api } from '../services/api';
 
-export default function ChatBot({ sessionId, datasetInfo }) {
+export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const userQueryRef = useRef(null);
+  const lastScrolledSessionIdRef = useRef(null);
+  const loadedSessionIdRef = useRef(null);
+  const prevMessagesLengthRef = useRef(0);
+  const streamRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Scroll statically to bottom when switching sessions or when a new user query is added
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
+    const currentSession = sessionId || 'sandbox';
+    if (messages.length > 0 && streamRef.current && loadedSessionIdRef.current === currentSession) {
+      const isSessionSwitch = lastScrolledSessionIdRef.current !== currentSession;
+      
+      // Only auto-scroll on new message addition if the message is from the human user
+      const lastMessage = messages[messages.length - 1];
+      const isNewHumanMessage = (messages.length > prevMessagesLengthRef.current) && (lastMessage?.role === 'human');
 
-  useEffect(() => {
-    if (sessionId) {
-      setError(null);
-      const savedHistory = localStorage.getItem(`juda_chat_${sessionId}`);
-      if (savedHistory) {
-        try {
-          setMessages(JSON.parse(savedHistory));
-        } catch (e) {
-          setMessages([]);
+      if (isSessionSwitch || isNewHumanMessage) {
+        const timer = setTimeout(() => {
+          if (streamRef.current) {
+            streamRef.current.scrollTop = streamRef.current.scrollHeight;
+          }
+        }, 100); // Small layout render delay to ensure images/plots have fully loaded
+        
+        if (isSessionSwitch) {
+          lastScrolledSessionIdRef.current = currentSession;
         }
+        prevMessagesLengthRef.current = messages.length;
+        return () => clearTimeout(timer);
+      }
+    }
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, sessionId]);
+
+  useEffect(() => {
+    setShowConfirmClear(false);
+    const loadChatHistory = async () => {
+      if (sessionId) {
+        setError(null);
+        try {
+          const history = await api.getChatHistory(sessionId);
+          if (history && Array.isArray(history) && history.length > 0) {
+            const formattedHistory = history.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+              timestamp: msg.timestamp || ''
+            }));
+            setMessages(formattedHistory);
+            loadedSessionIdRef.current = sessionId;
+            localStorage.setItem(`juda_chat_${sessionId}`, JSON.stringify(formattedHistory));
+            return;
+          }
+        } catch (err) {
+          console.warn("Failed to fetch chat history from backend, falling back to localStorage:", err);
+        }
+
+        // Fallback to localStorage or welcome message
+        const savedHistory = localStorage.getItem(`juda_chat_${sessionId}`);
+        if (savedHistory) {
+          try {
+            setMessages(JSON.parse(savedHistory));
+          } catch (e) {
+            setMessages([]);
+          }
+        } else {
+          setMessages([
+            {
+              role: 'assistant',
+              content: `👋 **Welcome to Juda AI Assistant!** I have successfully analyzed and indexed the metadata for \`${datasetInfo?.filename || 'your dataset'}\`. \n\nI operate under a strict **Zero-Disk Privacy Policy**—meaning your raw data was discarded immediately after computing summary statistics, and I only read the safe aggregated stats context. \n\nAsk me anything! For example, you can ask about correlations, missing values, data anomalies, or request clean-up code.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ]);
+        }
+        loadedSessionIdRef.current = sessionId;
       } else {
         setMessages([
           {
             role: 'assistant',
-            content: `👋 **Welcome to Juda AI Assistant!** I have successfully analyzed and indexed the metadata for \`${datasetInfo?.filename || 'your dataset'}\`. \n\nI operate under a strict **Zero-Disk Privacy Policy**—meaning your raw data was discarded immediately after computing summary statistics, and I only read the safe aggregated stats context. \n\nAsk me anything! For example, you can ask about correlations, missing values, data anomalies, or request clean-up code.`,
+            content: `🤖 **Juda Sandbox Mode Active.** \n\nYou can upload a CSV to start analyzing your own data. In the meantime, feel free to ask me general questions about Exploratory Data Analysis (EDA), pandas data-cleaning patterns, or play with this mock interface!`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
+        loadedSessionIdRef.current = 'sandbox';
       }
-    } else {
-      setMessages([
-        {
-          role: 'assistant',
-          content: `🤖 **Juda Sandbox Mode Active.** \n\nYou can upload a CSV to start analyzing your own data. In the meantime, feel free to ask me general questions about Exploratory Data Analysis (EDA), pandas data-cleaning patterns, or play with this mock interface!`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
-    }
+    };
+
+    loadChatHistory();
   }, [sessionId, datasetInfo]);
 
   const saveChatHistory = (updatedMessages) => {
@@ -159,12 +209,25 @@ Is there any specific data science or machine learning question I can help you w
     }
   };
 
-  const handleClearHistory = () => {
-    if (window.confirm('Are you sure you want to clear your chat history for this session?')) {
-      setMessages([]);
-      if (sessionId) {
+  const handleClearHistory = async () => {
+    setShowConfirmClear(false);
+
+    if (sessionId) {
+      if (onDeleteSession) {
+        onDeleteSession(sessionId);
+      } else {
+        // Fallback
+        setMessages([]);
         localStorage.removeItem(`juda_chat_${sessionId}`);
+        try {
+          await api.clearChatHistory(sessionId);
+        } catch (err) {
+          console.error("Failed to clear chat history:", err);
+        }
       }
+    } else {
+      // Sandbox mode
+      setMessages([]);
     }
   };
 
@@ -180,7 +243,7 @@ Is there any specific data science or machine learning question I can help you w
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      minHeight: '600px',
+      minHeight: 0,
       overflow: 'hidden',
       position: 'relative',
       background: 'var(--bg-card)',
@@ -226,39 +289,96 @@ Is there any specific data science or machine learning question I can help you w
           </div>
         </div>
 
-        {messages.length > 0 && (
-          <button 
-            onClick={handleClearHistory}
-            title="Clear Chat Logs"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)';
-              e.currentTarget.style.color = 'var(--color-danger)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--text-muted)';
-            }}
-          >
-            <Trash2 size={16} />
-          </button>
+        {showConfirmClear ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-danger)', fontWeight: '600' }}>
+              Delete chat from history?
+            </span>
+            <button 
+              onClick={handleClearHistory}
+              style={{
+                background: 'var(--color-danger)',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(0.95)'}
+              onMouseLeave={(e) => e.currentTarget.style.filter = 'none'}
+            >
+              Confirm
+            </button>
+            <button 
+              onClick={() => setShowConfirmClear(false)}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-main)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          messages.length > 0 && (
+            <button 
+              onClick={() => setShowConfirmClear(true)}
+              title="Clear Chat Logs"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)';
+                e.currentTarget.style.color = 'var(--color-danger)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
+          )
         )}
       </div>
 
       {/* Message Stream */}
-      <div className="chat-messages-stream" style={{
+      <div 
+        ref={streamRef}
+        className="chat-messages-stream" 
+        style={{
         flex: 1,
+        minHeight: 0,
         padding: '24px 20px',
         overflowY: 'auto',
         display: 'flex',
@@ -268,9 +388,11 @@ Is there any specific data science or machine learning question I can help you w
       }}>
         {messages.map((msg, index) => {
           const isAI = msg.role === 'assistant';
+          const isUserQuery = !isAI && index === messages.length - 2;
           return (
             <div 
               key={index}
+              ref={isUserQuery ? userQueryRef : null}
               style={{
                 display: 'flex',
                 gap: '12px',

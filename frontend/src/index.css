@@ -200,6 +200,9 @@ a:hover {
   line-height: 1.625;
   font-size: 0.9rem;
   color: var(--text-secondary);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .markdown-content h1, .markdown-content h2, .markdown-content h3 {
@@ -229,6 +232,7 @@ a:hover {
   border-radius: 4px;
   font-size: 0.85em;
   color: #D946EF;
+  word-break: break-all;
 }
 
 .markdown-content pre {
@@ -238,6 +242,7 @@ a:hover {
   border-radius: 6px;
   overflow-x: auto;
   margin-bottom: 1rem;
+  max-width: 100%;
 }
 
 .markdown-content pre code {
@@ -246,22 +251,35 @@ a:hover {
   padding: 0;
   color: #F8FAFC;
   font-size: 0.82rem;
+  word-break: normal;
+  white-space: pre;
 }
 
 .markdown-content table {
+  display: block;
   width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   margin-bottom: 1rem;
+  max-width: 100%;
 }
 
 .markdown-content th, .markdown-content td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-color);
   text-align: left;
+  white-space: nowrap;
 }
 
 .markdown-content th {
   color: var(--text-primary);
   background: #F8FAFC;
   font-weight: 600;
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 10px 0;
 }

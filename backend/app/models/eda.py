@@ -25,3 +25,9 @@ class MetadataResponse(BaseModel):
     duplicates: int
     correlations: Dict[str, Any]
     categorical_summary: Dict[str, Any]
+
+class SessionInfoResponse(BaseModel):
+    session_id: str
+    filename: str
+    row_count: int
+    columns: List[str]

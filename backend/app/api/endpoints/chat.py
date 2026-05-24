@@ -1,10 +1,11 @@
 import json
 import logging
+from typing import List
 from fastapi import APIRouter, HTTPException, status
-from app.models.chat import ChatRequest, ChatResponse
+from app.models.chat import ChatRequest, ChatResponse, ChatMessage
 from app.services.firebase_service import firebase_service, FirebaseNotConfiguredException
 from app.services.llm_service import llm_service, GeminiNotConfiguredException
-from app.api.endpoints.eda import LOCAL_SESSION_CACHE
+from app.api.endpoints.eda import LOCAL_SESSION_CACHE, save_local_session_cache
 
 logger = logging.getLogger("juda.api.chat")
 router = APIRouter(prefix="/chat", tags=["Data Assistant Chat"])
@@ -64,10 +65,12 @@ def chat_with_data(session_id: str, request: ChatRequest):
                 logger.error(f"Failed to save messages to database: {str(e)}. Storing in local cache instead.")
                 LOCAL_SESSION_CACHE[session_id]["messages"].append({"role": "human", "content": user_msg})
                 LOCAL_SESSION_CACHE[session_id]["messages"].append({"role": "assistant", "content": ai_response})
+                save_local_session_cache()
         else:
             # Save in local mock cache
             LOCAL_SESSION_CACHE[session_id]["messages"].append({"role": "human", "content": user_msg})
             LOCAL_SESSION_CACHE[session_id]["messages"].append({"role": "assistant", "content": ai_response})
+            save_local_session_cache()
 
         return ChatResponse(
             session_id=session_id,
@@ -81,6 +84,57 @@ def chat_with_data(session_id: str, request: ChatRequest):
         )
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@router.get("/history/{session_id}", response_model=List[ChatMessage])
+def get_chat_history(session_id: str):
+    """
+    Retrieve ordered conversation logs for a session.
+    Fetches from Firestore if available, otherwise falls back to local cache.
+    """
+    try:
+        try:
+            return firebase_service.get_chat_history(session_id)
+        except Exception as e:
+            logger.warning(f"Database fetch for chat history failed: {str(e)}. Falling back to local cache.")
+            if session_id not in LOCAL_SESSION_CACHE:
+                raise KeyError()
+            return LOCAL_SESSION_CACHE[session_id].get("messages", [])
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session '{session_id}' not found."
+        )
+    except Exception as e:
+        logger.error(f"Error retrieving chat history: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@router.delete("/history/{session_id}", status_code=status.HTTP_200_OK)
+def clear_chat_history(session_id: str):
+    """
+    Clear all chat conversation logs for a session from Firestore and local cache.
+    """
+    try:
+        # 1. Clear database
+        try:
+            firebase_service.clear_chat_history(session_id)
+        except Exception as e:
+            logger.warning(f"Database clear failed, falling back to local memory: {str(e)}")
+            
+        # 2. Clear local cache if present
+        if session_id in LOCAL_SESSION_CACHE:
+            LOCAL_SESSION_CACHE[session_id]["messages"] = []
+            save_local_session_cache()
+            
+        return {"status": "success", "message": f"Chat history for session '{session_id}' successfully cleared."}
+    except Exception as e:
+        logger.error(f"Error clearing chat history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

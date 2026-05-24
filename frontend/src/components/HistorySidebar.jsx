@@ -1,48 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Database, Plus, Settings, RefreshCw, Server, ShieldCheck, ChevronDown, PanelLeftClose, Trash2, Check, X } from 'lucide-react';
-import { getApiBaseUrl, setApiBaseUrl } from '../services/api';
+import React, { useState } from 'react';
+import { Database, Plus, ShieldCheck, PanelLeftClose, Trash2, Check, X } from 'lucide-react';
 
 export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSelectSession, onResetSession, onDeleteSession, sessions = [] }) {
-  const [hostUrl, setHostUrl] = useState(getApiBaseUrl());
-  const [isTestingStatus, setIsTestingStatus] = useState(false);
-  const [serverStatus, setServerStatus] = useState('unknown'); // 'online', 'offline', 'unknown'
-  const [showSettings, setShowSettings] = useState(false);
   const [deletingSessionId, setDeletingSessionId] = useState(null); // Track session pending deletion
-
-  // Ping check to test server status on mount
-  const checkServerStatus = async (urlToCheck = hostUrl) => {
-    setIsTestingStatus(true);
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), 2500);
-
-      await fetch(`${urlToCheck}/api/v1/eda/summary/ping_test`, { 
-        method: 'GET',
-        signal: controller.signal
-      }).catch(e => {
-        if (e.name === 'AbortError') throw e;
-        return { status: 404 }; 
-      });
-      
-      clearTimeout(id);
-      setServerStatus('online');
-    } catch (e) {
-      setServerStatus('offline');
-    } finally {
-      setIsTestingStatus(false);
-    }
-  };
-
-  useEffect(() => {
-    checkServerStatus();
-  }, []);
-
-  const handleHostSave = (e) => {
-    e.preventDefault();
-    setApiBaseUrl(hostUrl);
-    checkServerStatus(hostUrl);
-    setShowSettings(false);
-  };
 
   const startDeleteFlow = (e, sessionId) => {
     e.stopPropagation(); // Avoid triggering session selection
@@ -378,120 +338,17 @@ export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSe
       {/* Divider */}
       <div style={{ height: '1px', background: 'var(--border-color)', margin: '12px 0' }} />
 
-      {/* Bottom Connection Status */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        
-        {/* Host Status Widget */}
-        <div 
-          onClick={() => setShowSettings(!showSettings)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '8px 10px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'background-color 0.15s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#ECECEF';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          <div style={{
-            width: '20px',
-            height: '20px',
-            borderRadius: '50%',
-            background: 
-              serverStatus === 'online' ? 'rgba(16, 185, 129, 0.15)' :
-              serverStatus === 'offline' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 
-              serverStatus === 'online' ? 'var(--color-success)' :
-              serverStatus === 'offline' ? 'var(--color-danger)' : 'var(--color-warning)',
-            fontSize: '0.75rem',
-            fontWeight: '600'
-          }}>
-            {serverStatus === 'online' ? '●' : '○'}
-          </div>
-          
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: '500', color: 'var(--text-primary)' }}>
-              FastAPI Status
-            </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {serverStatus === 'online' ? 'Connected' : 'Offline'}
-            </div>
-          </div>
-          <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
-        </div>
-
-        {/* Change Host Drawer */}
-        {showSettings && (
-          <form 
-            onSubmit={handleHostSave} 
-            style={{ 
-              padding: '8px', 
-              background: '#FFFFFF', 
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '6px',
-              animation: 'fadeIn 0.2s ease-out'
-            }}
-          >
-            <label style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>
-              API Base URL
-            </label>
-            <input 
-              type="text" 
-              value={hostUrl} 
-              onChange={(e) => setHostUrl(e.target.value)}
-              placeholder="e.g. http://127.0.0.1:8000"
-              style={{
-                background: 'var(--bg-main)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                padding: '6px 8px',
-                color: 'var(--text-primary)',
-                fontSize: '0.72rem',
-                outline: 'none',
-                width: '100%'
-              }}
-            />
-            <button 
-              type="submit"
-              className="btn-primary"
-              style={{
-                padding: '6px',
-                fontSize: '0.72rem',
-                fontWeight: '600',
-                justifyContent: 'center'
-              }}
-            >
-              Save Address
-            </button>
-          </form>
-        )}
-
-        {/* In-Memory Policy Footer */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 10px',
-          fontSize: '0.65rem',
-          color: 'var(--text-muted)'
-        }}>
-          <ShieldCheck size={14} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
-          <span>Zero-Disk Memory active</span>
-        </div>
-
+      {/* In-Memory Policy Footer */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 10px',
+        fontSize: '0.65rem',
+        color: 'var(--text-muted)'
+      }}>
+        <ShieldCheck size={14} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+        <span>Zero-Disk Memory active</span>
       </div>
 
       <style>{`

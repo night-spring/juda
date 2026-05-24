@@ -116,11 +116,40 @@ export const api = {
   },
 
   /**
+   * Retrieves all sessions stored in the backend (Firestore or local cache)
+   */
+  getSessions: async () => {
+    return request('/eda/sessions', {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieves ordered chat conversation log for a session
+   * @param {string} sessionId
+   */
+  getChatHistory: async (sessionId) => {
+    return request(`/chat/history/${sessionId}`, {
+      method: 'GET',
+    });
+  },
+
+  /**
    * Deletes a session and all its messages from Firestore
    * @param {string} sessionId
    */
   deleteSession: async (sessionId) => {
     return request(`/eda/session/${sessionId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Clears ordered chat conversation log for a session, keeping the session document itself
+   * @param {string} sessionId
+   */
+  clearChatHistory: async (sessionId) => {
+    return request(`/chat/history/${sessionId}`, {
       method: 'DELETE',
     });
   },

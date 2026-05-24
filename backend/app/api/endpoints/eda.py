@@ -1,9 +1,11 @@
+import os
 import io
 import uuid
 import json
 import logging
+from typing import List
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from app.models.eda import UploadResponse, ReportResponse, MetadataResponse
+from app.models.eda import UploadResponse, ReportResponse, MetadataResponse, SessionInfoResponse
 from app.services.eda_service import eda_service
 from app.services.viz_service import viz_service
 from app.services.firebase_service import firebase_service, FirebaseNotConfiguredException
@@ -14,6 +16,32 @@ router = APIRouter(prefix="/eda", tags=["Exploratory Data Analysis"])
 
 # Thread-safe in-memory cache fallback for local mock testing without Firebase
 LOCAL_SESSION_CACHE = {}
+CACHE_FILE_PATH = "data/local_session_cache.json"
+
+def load_local_session_cache():
+    if os.path.exists(CACHE_FILE_PATH):
+        try:
+            with open(CACHE_FILE_PATH, "r", encoding="utf-8") as f:
+                loaded_data = json.load(f)
+            LOCAL_SESSION_CACHE.clear()
+            LOCAL_SESSION_CACHE.update(loaded_data)
+            logger.info(f"✅ Loaded {len(LOCAL_SESSION_CACHE)} sessions from local storage.")
+        except Exception as e:
+            logger.error(f"❌ Failed to load local session cache: {str(e)}")
+    else:
+        LOCAL_SESSION_CACHE.clear()
+
+def save_local_session_cache():
+    try:
+        os.makedirs(os.path.dirname(CACHE_FILE_PATH), exist_ok=True)
+        with open(CACHE_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(LOCAL_SESSION_CACHE, f, ensure_ascii=False, indent=2)
+        logger.info(f"💾 Persisted {len(LOCAL_SESSION_CACHE)} sessions to local cache file.")
+    except Exception as e:
+        logger.error(f"❌ Failed to save local session cache: {str(e)}")
+
+# Initialize the cache on import
+load_local_session_cache()
 
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_csv(file: UploadFile = File(...)):
@@ -61,6 +89,7 @@ async def upload_csv(file: UploadFile = File(...)):
                 "plots": plots_base64,
                 "messages": []
             }
+            save_local_session_cache()
             using_firebase = False
 
         db_status = "Firebase Firestore" if using_firebase else "Local In-Memory Cache (Mock Mode)"
@@ -182,6 +211,7 @@ def delete_session(session_id: str):
             logger.warning(f"Database delete failed, trying local memory cache: {str(e)}")
             if session_id in LOCAL_SESSION_CACHE:
                 del LOCAL_SESSION_CACHE[session_id]
+                save_local_session_cache()
                 using_firebase = False
             else:
                 raise KeyError()
@@ -202,4 +232,37 @@ def delete_session(session_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+@router.get("/sessions", response_model=List[SessionInfoResponse])
+def get_all_sessions():
+    """
+    Retrieve all sessions stored in Firestore or the local cache.
+    Useful for populating the session history on server startup.
+    """
+    try:
+        try:
+            return firebase_service.get_all_sessions()
+        except Exception as e:
+            logger.warning(f"Database fetch for sessions failed: {str(e)}. Falling back to local cache.")
+            sessions = []
+            for s_id, s_data in LOCAL_SESSION_CACHE.items():
+                data_info = s_data.get("data_info", {})
+                sessions.append({
+                    "session_id": s_id,
+                    "filename": s_data.get("filename"),
+                    "row_count": data_info.get("row_count", 0),
+                    "columns": data_info.get("columns", [])
+                })
+            return sessions
+    except Exception as e:
+        logger.error(f"Error in get_all_sessions endpoint: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve sessions: {str(e)}"
+        )
+
+@router.get("/summary/ping_test")
+def ping_test():
+    """Simple ping test endpoint for connection checks."""
+    return {"status": "online"}
 

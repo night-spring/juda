@@ -125,6 +125,40 @@ class FirebaseService:
         messages_ref.add(message_data)
         logger.info(f"Added message by {role} to session {session_id} history")
 
+    def get_all_sessions(self) -> list:
+        """Retrieve all sessions stored in Firestore."""
+        self._check_db_ready()
+        try:
+            # Try to order by created_at descending
+            docs = self.db.collection("sessions").order_by("created_at", direction=firestore.Query.DESCENDING).stream()
+        except Exception as e:
+            logger.warning(f"Could not sort sessions by created_at: {str(e)}. Streaming unordered documents.")
+            docs = self.db.collection("sessions").stream()
+
+        sessions = []
+        for doc in docs:
+            data = doc.to_dict()
+            try:
+                data_info = json.loads(data.get("data_info", "{}"))
+            except Exception:
+                data_info = {}
+            sessions.append({
+                "session_id": data.get("session_id"),
+                "filename": data.get("filename"),
+                "row_count": data_info.get("row_count", 0),
+                "columns": data_info.get("columns", [])
+            })
+        return sessions
+
+    def clear_chat_history(self, session_id: str) -> None:
+        """Delete all nested chat messages for a session from Firestore, keeping the parent document."""
+        self._check_db_ready()
+        messages_ref = self.db.collection("sessions").document(session_id).collection("messages")
+        messages = messages_ref.stream()
+        for doc in messages:
+            doc.reference.delete()
+        logger.info(f"Cleared Firestore nested messages for session '{session_id}'.")
+
     def delete_session(self, session_id: str) -> None:
         """Delete a session document and all nested chat message subcollections from Firestore."""
         self._check_db_ready()

@@ -14,32 +14,51 @@ export default function App() {
   const [summaryError, setSummaryError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Load history from localStorage on startup
+  // Load history from backend and sync/fallback to localStorage on startup
   useEffect(() => {
-    const savedSessions = localStorage.getItem('juda_saved_sessions');
-    if (savedSessions) {
+    const loadHistory = async () => {
       try {
-        setSessionsHistory(JSON.parse(savedSessions));
-      } catch (e) {
-        setSessionsHistory([]);
+        const backendSessions = await api.getSessions();
+        if (backendSessions && Array.isArray(backendSessions)) {
+          setSessionsHistory(backendSessions);
+          localStorage.setItem('juda_saved_sessions', JSON.stringify(backendSessions));
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to fetch sessions from backend on startup, falling back to localStorage:", err);
       }
-    }
+
+      // Fallback to localStorage if backend fetch fails or is offline
+      const savedSessions = localStorage.getItem('juda_saved_sessions');
+      if (savedSessions) {
+        try {
+          setSessionsHistory(JSON.parse(savedSessions));
+        } catch (e) {
+          setSessionsHistory([]);
+        }
+      }
+    };
+
+    loadHistory();
   }, []);
 
-  const fetchDatasetDetails = async (sessionId) => {
+  const fetchDatasetDetails = async (sessionId, activeSession) => {
     setIsLoadingSummary(true);
     setSummaryError(null);
     try {
       const summary = await api.getSummary(sessionId);
-      setDatasetInfo(summary);
+      setDatasetInfo({
+        ...summary,
+        filename: activeSession?.filename || 'Dataset'
+      });
     } catch (err) {
       console.error(err);
       setSummaryError('Failed to fetch dataset summary profiling. Server may be in fallback mock mode.');
       setDatasetInfo({
-        filename: session?.filename || 'Dataset',
-        row_count: session?.row_count || 100,
-        col_count: session?.columns?.length || 5,
-        columns: session?.columns || ['id', 'feature_a', 'feature_b', 'target'],
+        filename: activeSession?.filename || 'Dataset',
+        row_count: activeSession?.row_count || 100,
+        col_count: activeSession?.columns?.length || 5,
+        columns: activeSession?.columns || ['id', 'feature_a', 'feature_b', 'target'],
         numerical_columns: ['feature_a', 'feature_b'],
         categorical_columns: ['target'],
         not_useful_columns: ['id'],
@@ -69,13 +88,13 @@ export default function App() {
     
     setIsSandboxMode(false);
     setSession(newSession);
-    fetchDatasetDetails(uploadData.session_id);
+    fetchDatasetDetails(uploadData.session_id, newSession);
   };
 
   const handleSelectSession = (selectedSession) => {
     setIsSandboxMode(false);
     setSession(selectedSession);
-    fetchDatasetDetails(selectedSession.session_id);
+    fetchDatasetDetails(selectedSession.session_id, selectedSession);
   };
 
   const handleReset = () => {
@@ -187,7 +206,7 @@ export default function App() {
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        overflowY: 'auto',
+        overflowY: (session || isSandboxMode) ? 'hidden' : 'auto',
         position: 'relative',
         transition: 'padding 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
@@ -248,7 +267,9 @@ export default function App() {
             display: 'flex',
             flexDirection: 'column',
             gap: '24px',
-            height: '100%',
+            flex: 1,
+            minHeight: 0,
+            overflow: 'hidden',
             animation: 'fadeInWorkspace 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }}>
             
@@ -308,14 +329,14 @@ export default function App() {
             {/* Split Workspace Layout */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '320px 1fr',
+              gridTemplateColumns: '320px minmax(0, 1fr)',
               gap: '24px',
               flex: 1,
               minHeight: 0
             }}>
               
               {/* Left Column: Data Catalog Quick Overview */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', height: '100%', minHeight: 0 }}>
                 
                 {/* Profile Summary Card */}
                 <div className="glass-panel" style={{ padding: '20px', background: '#FFFFFF' }}>
@@ -439,10 +460,11 @@ export default function App() {
               </div>
 
               {/* Right Column: Hero Chat Space */}
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
                 <ChatBot 
                   sessionId={session?.session_id}
                   datasetInfo={datasetInfo}
+                  onDeleteSession={handleDeleteSession}
                 />
               </div>
 
