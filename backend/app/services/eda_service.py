@@ -11,7 +11,7 @@ class EDAService:
         try:
             # Re-read from beginning of file stream
             file_stream.seek(0)
-            df = pd.read_csv(file_stream)
+            df = pd.read_csv(file_stream, sep=None, engine='python')
             logger.info(f"Loaded DataFrame in-memory: {df.shape[0]} rows, {df.shape[1]} columns")
             return df
         except Exception as e:
