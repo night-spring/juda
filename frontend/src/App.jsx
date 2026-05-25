@@ -3,6 +3,7 @@ import { Sparkles, Database, FileSpreadsheet, Bot, HelpCircle, Layers, ChevronRi
 import HistorySidebar from './components/HistorySidebar';
 import Dropzone from './components/Dropzone';
 import ChatBot from './components/ChatBot';
+import SaaSLandingPage from './components/SaaSLandingPage';
 import { api } from './services/api';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' or 'workspace'
 
   // Load history from backend and sync/fallback to localStorage on startup
   useEffect(() => {
@@ -88,12 +90,14 @@ export default function App() {
     
     setIsSandboxMode(false);
     setSession(newSession);
+    setCurrentView('workspace');
     fetchDatasetDetails(uploadData.session_id, newSession);
   };
 
   const handleSelectSession = (selectedSession) => {
     setIsSandboxMode(false);
     setSession(selectedSession);
+    setCurrentView('workspace');
     fetchDatasetDetails(selectedSession.session_id, selectedSession);
   };
 
@@ -129,6 +133,7 @@ export default function App() {
   const handleActivateSandbox = () => {
     setIsSandboxMode(true);
     setSession(null);
+    setCurrentView('workspace');
     setDatasetInfo({
       filename: 'synthetic_marketing_data.csv',
       row_count: 1420,
@@ -141,6 +146,14 @@ export default function App() {
       duplicates: 3
     });
   };
+
+  const handleBackToLanding = () => {
+    setCurrentView('landing');
+  };
+
+  if (currentView === 'landing') {
+    return <SaaSLandingPage onLaunchWorkspace={() => setCurrentView('workspace')} />;
+  }
 
   return (
     <div className="app-container" style={{
@@ -162,6 +175,7 @@ export default function App() {
         onSelectSession={handleSelectSession}
         onResetSession={handleReset}
         onDeleteSession={handleDeleteSession}
+        onBackToLanding={handleBackToLanding}
       />
 
       {/* Floating Expand Sidebar Button (ChatGPT style, visible only when collapsed) */}

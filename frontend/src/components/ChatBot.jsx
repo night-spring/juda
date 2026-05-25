@@ -2,7 +2,160 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Trash2, Bot, User, CornerDownLeft, AlertCircle, HelpCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { api } from '../services/api';
+import { api, getApiBaseUrl } from '../services/api';
+
+// --- MOCK SANDBOX VISUALIZATION COMPONENTS (SVG) ---
+function MockCorrelationHeatmap() {
+  return (
+    <svg viewBox="0 0 400 300" width="100%" height="auto" style={{ maxHeight: '280px', borderRadius: '8px', background: '#FCFCFB', display: 'block', margin: '0 auto' }}>
+      <rect width="400" height="300" rx="8" fill="#F8FAFC" />
+      <text x="200" y="25" textAnchor="middle" fill="#0F172A" fontWeight="bold" fontSize="13">Correlation Heatmap (Mock Sandbox Mode)</text>
+      <g transform="translate(80, 50)">
+        <text x="-10" y="25" textAnchor="end" fill="#475569" fontSize="10" fontWeight="500">Age</text>
+        <rect x="0" y="0" width="50" height="50" fill="#4F46E5" rx="4" />
+        <text x="25" y="28" textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="bold">1.00</text>
+        
+        <rect x="55" y="0" width="50" height="50" fill="#EEF2FF" rx="4" />
+        <text x="80" y="28" textAnchor="middle" fill="#4F46E5" fontSize="10" fontWeight="bold">0.08</text>
+        
+        <rect x="110" y="0" width="50" height="50" fill="#FEE2E2" rx="4" />
+        <text x="135" y="28" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.15</text>
+        
+        <rect x="165" y="0" width="50" height="50" fill="#FEF2F2" rx="4" />
+        <text x="190" y="28" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.05</text>
+
+        <text x="-10" y="80" textAnchor="end" fill="#475569" fontSize="10" fontWeight="500">Income</text>
+        <rect x="0" y="55" width="50" height="50" fill="#EEF2FF" rx="4" />
+        <text x="25" y="83" textAnchor="middle" fill="#4F46E5" fontSize="10" fontWeight="bold">0.08</text>
+        
+        <rect x="55" y="55" width="50" height="50" fill="#4F46E5" rx="4" />
+        <text x="80" y="83" textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="bold">1.00</text>
+        
+        <rect x="110" y="55" width="50" height="50" fill="#C7D2FE" rx="4" />
+        <text x="135" y="83" textAnchor="middle" fill="#4338CA" fontSize="10" fontWeight="bold">0.42</text>
+        
+        <rect x="165" y="55" width="50" height="50" fill="#FEE2E2" rx="4" />
+        <text x="190" y="83" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.21</text>
+
+        <text x="-10" y="135" textAnchor="end" fill="#475569" fontSize="10" fontWeight="500">Spend</text>
+        <rect x="0" y="110" width="50" height="50" fill="#FEE2E2" rx="4" />
+        <text x="25" y="138" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.15</text>
+        
+        <rect x="55" y="110" width="50" height="50" fill="#C7D2FE" rx="4" />
+        <text x="80" y="138" textAnchor="middle" fill="#4338CA" fontSize="10" fontWeight="bold">0.42</text>
+        
+        <rect x="110" y="110" width="50" height="50" fill="#4F46E5" rx="4" />
+        <text x="135" y="138" textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="bold">1.00</text>
+        
+        <rect x="165" y="110" width="50" height="50" fill="#FEF2F2" rx="4" />
+        <text x="190" y="138" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.09</text>
+
+        <text x="-10" y="190" textAnchor="end" fill="#475569" fontSize="10" fontWeight="500">Churn</text>
+        <rect x="0" y="165" width="50" height="50" fill="#FEF2F2" rx="4" />
+        <text x="25" y="193" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.05</text>
+        
+        <rect x="55" y="165" width="50" height="50" fill="#FEE2E2" rx="4" />
+        <text x="80" y="193" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.21</text>
+        
+        <rect x="110" y="165" width="50" height="50" fill="#FEF2F2" rx="4" />
+        <text x="135" y="193" textAnchor="middle" fill="#EF4444" fontSize="10" fontWeight="bold">-0.09</text>
+        
+        <rect x="165" y="165" width="50" height="50" fill="#4F46E5" rx="4" />
+        <text x="190" y="193" textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="bold">1.00</text>
+        
+        <text x="25" y="-10" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="500">Age</text>
+        <text x="80" y="-10" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="500">Income</text>
+        <text x="135" y="-10" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="500">Spend</text>
+        <text x="190" y="-10" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="500">Churn</text>
+      </g>
+      
+      <g transform="translate(305, 50)">
+        <text x="15" y="10" fill="#475569" fontSize="9" fontWeight="bold">Legend</text>
+        <rect x="15" y="20" width="12" height="12" fill="#4F46E5" rx="2" />
+        <text x="32" y="29" fill="#475569" fontSize="9">1.0 (Pos)</text>
+        <rect x="15" y="40" width="12" height="12" fill="#EEF2FF" rx="2" />
+        <text x="32" y="49" fill="#475569" fontSize="9">0.0 (None)</text>
+        <rect x="15" y="60" width="12" height="12" fill="#EF4444" rx="2" />
+        <text x="32" y="69" fill="#475569" fontSize="9">-1.0 (Neg)</text>
+      </g>
+    </svg>
+  );
+}
+
+function MockMissingValues() {
+  return (
+    <svg viewBox="0 0 400 300" width="100%" height="auto" style={{ maxHeight: '280px', borderRadius: '8px', background: '#FCFCFB', display: 'block', margin: '0 auto' }}>
+      <rect width="400" height="300" rx="8" fill="#F8FAFC" />
+      <text x="200" y="25" textAnchor="middle" fill="#0F172A" fontWeight="bold" fontSize="13">Missing Values Count (Mock Sandbox Mode)</text>
+      <line x1="80" y1="220" x2="350" y2="220" stroke="#E2E8F0" strokeWidth="1.5" />
+      <line x1="80" y1="170" x2="350" y2="170" stroke="#F1F5F9" strokeDasharray="3 3" />
+      <line x1="80" y1="120" x2="350" y2="120" stroke="#F1F5F9" strokeDasharray="3 3" />
+      <line x1="80" y1="70" x2="350" y2="70" stroke="#F1F5F9" strokeDasharray="3 3" />
+      <g>
+        <rect x="110" y="70" width="45" height="150" fill="url(#crestGradient)" rx="4" />
+        <text x="132.5" y="62" textAnchor="middle" fill="#0F172A" fontSize="10" fontWeight="bold">12</text>
+        <text x="132.5" y="238" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="500">age</text>
+
+        <rect x="220" y="170" width="45" height="50" fill="url(#crestGradient2)" rx="4" />
+        <text x="242.5" y="162" textAnchor="middle" fill="#0F172A" fontSize="10" fontWeight="bold">4</text>
+        <text x="242.5" y="238" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="500">spend_score</text>
+      </g>
+      <text x="70" y="223" textAnchor="end" fill="#94A3B8" fontSize="9">0</text>
+      <text x="70" y="173" textAnchor="end" fill="#94A3B8" fontSize="9">4</text>
+      <text x="70" y="123" textAnchor="end" fill="#94A3B8" fontSize="9">8</text>
+      <text x="70" y="73" textAnchor="end" fill="#94A3B8" fontSize="9">12</text>
+      <defs>
+        <linearGradient id="crestGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#4F46E5" />
+          <stop offset="100%" stopColor="#818CF8" />
+        </linearGradient>
+        <linearGradient id="crestGradient2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#4338CA" />
+          <stop offset="100%" stopColor="#A5B4FC" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function MockDistributions() {
+  return (
+    <svg viewBox="0 0 400 300" width="100%" height="auto" style={{ maxHeight: '280px', borderRadius: '8px', background: '#FCFCFB', display: 'block', margin: '0 auto' }}>
+      <rect width="400" height="300" rx="8" fill="#F8FAFC" />
+      <text x="200" y="25" textAnchor="middle" fill="#0F172A" fontWeight="bold" fontSize="13">Numeric Distributions (Mock Sandbox Mode)</text>
+      <g transform="translate(30, 50)">
+        <rect width="160" height="210" rx="6" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+        <text x="80" y="20" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="bold">Age Distribution</text>
+        <path d="M 20,180 C 40,180 50,70 80,70 C 110,70 120,180 140,180" fill="rgba(79, 70, 229, 0.08)" stroke="#4F46E5" strokeWidth="2" />
+        <rect x="25" y="160" width="10" height="20" fill="rgba(79, 70, 229, 0.2)" />
+        <rect x="37" y="130" width="10" height="50" fill="rgba(79, 70, 229, 0.25)" />
+        <rect x="49" y="100" width="10" height="80" fill="rgba(79, 70, 229, 0.3)" />
+        <rect x="61" y="80" width="10" height="100" fill="rgba(79, 70, 229, 0.4)" />
+        <rect x="73" y="75" width="10" height="105" fill="rgba(79, 70, 229, 0.4)" />
+        <rect x="85" y="85" width="10" height="95" fill="rgba(79, 70, 229, 0.35)" />
+        <rect x="97" y="110" width="10" height="70" fill="rgba(79, 70, 229, 0.3)" />
+        <rect x="109" y="140" width="10" height="40" fill="rgba(79, 70, 229, 0.25)" />
+        <rect x="121" y="165" width="10" height="15" fill="rgba(79, 70, 229, 0.2)" />
+        <line x1="15" y1="180" x2="145" y2="180" stroke="#CBD5E1" strokeWidth="1" />
+      </g>
+      <g transform="translate(210, 50)">
+        <rect width="160" height="210" rx="6" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+        <text x="80" y="20" textAnchor="middle" fill="#475569" fontSize="10" fontWeight="bold">Annual Income Dist</text>
+        <path d="M 20,180 C 35,180 40,50 65,50 C 95,50 110,180 140,180" fill="rgba(16, 185, 129, 0.08)" stroke="#10B981" strokeWidth="2" />
+        <rect x="25" y="150" width="10" height="30" fill="rgba(16, 185, 129, 0.2)" />
+        <rect x="37" y="110" width="10" height="70" fill="rgba(16, 185, 129, 0.25)" />
+        <rect x="49" y="70" width="10" height="110" fill="rgba(16, 185, 129, 0.3)" />
+        <rect x="61" y="55" width="10" height="125" fill="rgba(16, 185, 129, 0.4)" />
+        <rect x="73" y="65" width="10" height="115" fill="rgba(16, 185, 129, 0.4)" />
+        <rect x="85" y="90" width="10" height="90" fill="rgba(16, 185, 129, 0.35)" />
+        <rect x="97" y="120" width="10" height="60" fill="rgba(16, 185, 129, 0.3)" />
+        <rect x="109" y="145" width="10" height="35" fill="rgba(16, 185, 129, 0.25)" />
+        <rect x="121" y="165" width="10" height="15" fill="rgba(16, 185, 129, 0.2)" />
+        <line x1="15" y1="180" x2="145" y2="180" stroke="#CBD5E1" strokeWidth="1" />
+      </g>
+    </svg>
+  );
+}
 
 export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
   const [messages, setMessages] = useState([]);
@@ -10,6 +163,7 @@ export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const userQueryRef = useRef(null);
@@ -432,8 +586,120 @@ Is there any specific data science or machine learning question I can help you w
                   boxShadow: 'var(--shadow-sm)'
                 }}>
                   <div className="markdown-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        img: ({ src, alt, ...props }) => {
+                          const isViz = src && (src.includes('/viz/image/') || src.includes('viz/image/'));
+                          if (isViz) {
+                            let plotType = '';
+                            if (src.includes('correlation')) plotType = 'correlation';
+                            else if (src.includes('missing_values')) plotType = 'missing_values';
+                            else if (src.includes('distributions')) plotType = 'distributions';
+
+                            const isMock = !sessionId || sessionId === 'sandbox';
+
+                            if (isMock) {
+                              return (
+                                <div 
+                                  className="viz-card"
+                                  style={{
+                                    background: '#FFFFFF',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: '8px',
+                                    padding: '16px',
+                                    margin: '12px 0',
+                                    boxShadow: 'var(--shadow-sm)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease-in-out'
+                                  }}
+                                  onClick={() => setLightboxImage({ isMock: true, mockType: plotType, alt })}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                    e.currentTarget.style.borderColor = 'var(--primary-accent-border)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '6px' }}>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--primary-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                      📊 Sandbox Visualization
+                                    </span>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                                      Click to Zoom
+                                    </span>
+                                  </div>
+                                  {plotType === 'correlation' && <MockCorrelationHeatmap />}
+                                  {plotType === 'missing_values' && <MockMissingValues />}
+                                  {plotType === 'distributions' && <MockDistributions />}
+                                  <div style={{ marginTop: '8px', fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', fontStyle: 'italic' }}>
+                                    *Showing high-fidelity synthetic marketing data overview. Upload your CSV to see live data.*
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            const baseUrl = getApiBaseUrl();
+                            const relativePath = src.startsWith('/') ? src : `/${src}`;
+                            const fullSrc = `${baseUrl}/api/v1${relativePath}`;
+
+                            return (
+                              <div 
+                                className="viz-card"
+                                style={{
+                                  background: '#FFFFFF',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: '8px',
+                                  padding: '16px',
+                                  margin: '12px 0',
+                                  boxShadow: 'var(--shadow-sm)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease-in-out'
+                                }}
+                                onClick={() => setLightboxImage({ isMock: false, src: fullSrc, alt })}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                  e.currentTarget.style.borderColor = 'var(--primary-accent-border)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '6px' }}>
+                                  <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--primary-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    📈 Live Visualization
+                                  </span>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                                    Click to Zoom
+                                  </span>
+                                </div>
+                                <img 
+                                  src={fullSrc} 
+                                  alt={alt} 
+                                  style={{
+                                    width: '100%',
+                                    height: 'auto',
+                                    maxHeight: '260px',
+                                    borderRadius: '6px',
+                                    objectFit: 'contain',
+                                    background: '#F8FAFC'
+                                  }} 
+                                />
+                              </div>
+                            );
+                          }
+                          return <img src={src} alt={alt} {...props} />;
+                        }
+                      }}
+                    >
+                      {msg.content.replace(/{session_id}/g, sessionId || 'sandbox')}
                     </ReactMarkdown>
                   </div>
                 </div>
@@ -697,6 +963,93 @@ Is there any specific data science or machine learning question I can help you w
         </div>
       </div>
 
+      {lightboxImage && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={() => setLightboxImage(null)}
+        >
+          <div 
+            style={{
+              position: 'relative',
+              maxWidth: '90%',
+              maxHeight: '90%',
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              animation: 'zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setLightboxImage(null)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: '#F1F5F9',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#E2E8F0'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#F1F5F9'}
+            >
+              &times;
+            </button>
+            <div style={{ padding: '10px 0 0 0', width: '100%', display: 'flex', justifyContent: 'center' }}>
+              {lightboxImage.isMock ? (
+                <div style={{ width: '500px', maxWidth: '100%', height: 'auto' }}>
+                  {lightboxImage.mockType === 'correlation' && <MockCorrelationHeatmap />}
+                  {lightboxImage.mockType === 'missing_values' && <MockMissingValues />}
+                  {lightboxImage.mockType === 'distributions' && <MockDistributions />}
+                </div>
+              ) : (
+                <img 
+                  src={lightboxImage.src} 
+                  alt={lightboxImage.alt} 
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '70vh',
+                    borderRadius: '8px',
+                    objectFit: 'contain'
+                  }} 
+                />
+              )}
+            </div>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '600', marginTop: '4px' }}>
+              {lightboxImage.alt || 'Data Visualization'}
+            </span>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .typing-dot {
           width: 5px;
@@ -713,6 +1066,10 @@ Is there any specific data science or machine learning question I can help you w
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zoomIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
       `}</style>
 

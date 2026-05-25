@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Database, Plus, ShieldCheck, PanelLeftClose, Trash2, Check, X } from 'lucide-react';
+import { Database, Plus, ShieldCheck, PanelLeftClose, Trash2, Check, X, Home } from 'lucide-react';
 
-export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSelectSession, onResetSession, onDeleteSession, sessions = [] }) {
+export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSelectSession, onResetSession, onDeleteSession, onBackToLanding, sessions = [] }) {
   const [deletingSessionId, setDeletingSessionId] = useState(null); // Track session pending deletion
 
   const startDeleteFlow = (e, sessionId) => {
@@ -130,6 +130,41 @@ export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSe
       >
         <Plus size={16} style={{ color: 'var(--primary-accent)' }} />
         New CSV Profile
+      </button>
+
+      {/* Back to Landing Page Button */}
+      <button 
+        onClick={onBackToLanding}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          width: '100%',
+          background: 'transparent',
+          border: '1px dashed var(--border-color)',
+          color: 'var(--text-secondary)',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          fontWeight: '500',
+          fontSize: '0.85rem',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          marginBottom: '20px',
+          textAlign: 'left'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--primary-accent-light)';
+          e.currentTarget.style.borderColor = 'var(--primary-accent-border)';
+          e.currentTarget.style.color = 'var(--primary-accent)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.borderColor = 'var(--border-color)';
+          e.currentTarget.style.color = 'var(--text-secondary)';
+        }}
+      >
+        <Home size={16} />
+        Back to Landing Page
       </button>
 
       {/* Middle: Session History Stream */}
