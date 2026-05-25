@@ -17,26 +17,34 @@ class FirebaseService:
         self.db = None
         self.is_configured = False
         self._initialize_firebase()
+    
+    def initialize_cred(self):
+        project_id = settings.FIREBASE_PROJECT_ID
+        private_key = settings.FIREBASE_PRIVATE_KEY
+        client_email = settings.FIREBASE_CLIENT_EMAIL
+
+        cred_dict = {
+            "type": "service_account",
+            "project_id": project_id,
+            "private_key": private_key,
+            "client_email": client_email,
+            "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        
+        return cred_dict
 
     def _initialize_firebase(self):
-        cred_path = settings.FIREBASE_CREDENTIALS_PATH
-        if not cred_path:
+        cred_dict = self.initialize_cred()
+        if not cred_dict:
             logger.warning(
-                "⚠️ FIREBASE_CREDENTIALS_PATH is not set in environment. "
+                "⚠️ FIREBASE_CREDENTIALS are not set in environment. "
                 "Firebase service is running in mock/unconfigured mode. Database operations will fail gracefully."
-            )
-            return
-
-        if not os.path.exists(cred_path):
-            logger.warning(
-                f"⚠️ Firebase credential file not found at: {os.path.abspath(cred_path)}. "
-                "Firebase service is running in mock/unconfigured mode."
             )
             return
 
         try:
             # Initialize official firebase SDK
-            cred = credentials.Certificate(cred_path)
+            cred = credentials.Certificate(cred_dict)
             # Avoid duplicate app initialization error
             if not firebase_admin._apps:
                 firebase_admin.initialize_app(cred)
