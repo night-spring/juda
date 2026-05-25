@@ -2,7 +2,7 @@
 
 // Retrieve custom API base URL from localStorage if set, default to standard local FastAPI server
 export const getApiBaseUrl = () => {
-  return localStorage.getItem('juda_api_host') || 'http://127.0.0.1:8000';
+  return localStorage.getItem('juda_api_host') || 'https://juda-api.vercel.app';
 };
 
 export const setApiBaseUrl = (url) => {
