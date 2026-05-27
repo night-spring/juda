@@ -34,8 +34,9 @@ def test_full_pipeline_mock_flow():
     )
     
     # Send post request
+    headers = {"Authorization": "Bearer mock-token"}
     file_payload = {"file": ("iris_sample.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
-    upload_response = client.post("/api/v1/eda/upload", files=file_payload)
+    upload_response = client.post("/api/v1/eda/upload", files=file_payload, headers=headers)
     
     assert upload_response.status_code == 201
     upload_json = upload_response.json()
@@ -43,33 +44,33 @@ def test_full_pipeline_mock_flow():
     session_id = upload_json["session_id"]
     
     # 2. Get Metadata Summary
-    summary_response = client.get(f"/api/v1/eda/summary/{session_id}")
+    summary_response = client.get(f"/api/v1/eda/summary/{session_id}", headers=headers)
     assert summary_response.status_code == 200
     summary_json = summary_response.json()
     assert summary_json["row_count"] == 5
     assert "sepal_length" in summary_json["numerical_columns"]
     
     # 3. Get Analytical Report
-    report_response = client.get(f"/api/v1/eda/report/{session_id}")
+    report_response = client.get(f"/api/v1/eda/report/{session_id}", headers=headers)
     assert report_response.status_code == 200
     report_json = report_response.json()
     assert len(report_json["report"]) > 0
     
     # 4. Fetch Visualization base64 plots
-    viz_response = client.get(f"/api/v1/viz/base64/{session_id}/missing_values")
+    viz_response = client.get(f"/api/v1/viz/base64/{session_id}/missing_values", headers=headers)
     assert viz_response.status_code == 200
     viz_json = viz_response.json()
     assert "base64" in viz_json
     assert len(viz_json["base64"]) > 0
     
     # Fetch binary image
-    img_response = client.get(f"/api/v1/viz/image/{session_id}/missing_values")
+    img_response = client.get(f"/api/v1/viz/image/{session_id}/missing_values", headers=headers)
     assert img_response.status_code == 200
     assert img_response.headers["content-type"] == "image/png"
     
     # 5. Run Chat Session
     chat_payload = {"message": "Can you summarize the correlation values?"}
-    chat_response = client.post(f"/api/v1/chat/{session_id}", json=chat_payload)
+    chat_response = client.post(f"/api/v1/chat/{session_id}", json=chat_payload, headers=headers)
     assert chat_response.status_code == 200
     chat_json = chat_response.json()
     assert "response" in chat_json

@@ -83,7 +83,7 @@ function MockCorrelationHeatmap() {
   );
 }
 
-export default function SaaSLandingPage({ onLaunchWorkspace }) {
+export default function SaaSLandingPage({ onLaunchWorkspace, onLogin, isLoggedIn }) {
   const [scrolled, setScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('eda');
 
@@ -131,19 +131,15 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
       overflowX: 'hidden',
       position: 'relative'
     }}>
-      {/* Cool Dot-Mesh Background Pattern */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: 'radial-gradient(var(--border-color) 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-        opacity: 0.5,
-        zIndex: 0,
-        pointerEvents: 'none'
-      }} />
+      {/* Animated gradient blobs in background for modern premium SaaS visual style */}
+      <div className="bg-gradient-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+        <div className="blob blob-4"></div>
+      </div>
+
+      {/* Unified premium Indigo-tinted background dot-mesh is active globally */}
 
       {/* Header / Navbar */}
       <header style={{
@@ -180,12 +176,13 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
           </span>
         </div>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <a href="#features" className="nav-link">Features</a>
           <a href="#architecture" className="nav-link">Architecture</a>
           <a href="#creator" className="nav-link">Founder</a>
+          
           <button 
-            onClick={onLaunchWorkspace}
+            onClick={isLoggedIn ? onLaunchWorkspace : (onLogin || onLaunchWorkspace)}
             className="btn-primary" 
             style={{
               padding: '8px 18px',
@@ -197,7 +194,7 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
               boxShadow: '0 4px 12px rgba(79, 70, 229, 0.12)'
             }}
           >
-            Launch Workspace <ArrowRight size={14} />
+            {isLoggedIn ? 'Go to Workspace' : 'Login'} <ArrowRight size={14} />
           </button>
         </nav>
       </header>
@@ -274,7 +271,7 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
             Launch Free Workspace <ArrowRight size={16} />
           </button>
           <a 
-            href="https://github.com/night-spring" 
+            href="https://github.com/debojit94333" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="btn-secondary" 
@@ -640,7 +637,7 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
         </div>
 
         {/* Premium Profile Card */}
-        <div className="glass-panel" style={{
+        <div className="glass-panel developer-card" style={{
           maxWidth: '560px',
           margin: '0 auto',
           background: '#FFFFFF',
@@ -653,14 +650,17 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
           overflow: 'hidden'
         }}>
           {/* Subtle profile gradient background */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background: 'var(--accent-gradient)'
-          }} />
+          <div 
+            className="profile-gradient-line"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'var(--accent-gradient)'
+            }} 
+          />
 
           {/* Avatar frame */}
           <div>
@@ -727,7 +727,7 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
 
             {/* LinkedIn link */}
             <a 
-              href="https://www.linkedin.com/in/debojitroy001/"
+              href="https://www.linkedin.com/in/debojit94333/"
               target="_blank"
               rel="noopener noreferrer"
               className="social-badge"
@@ -761,7 +761,7 @@ export default function SaaSLandingPage({ onLaunchWorkspace }) {
 
             {/* GitHub link */}
             <a 
-              href="https://github.com/night-spring"
+              href="https://github.com/debojit94333"
               target="_blank"
               rel="noopener noreferrer"
               className="social-badge"

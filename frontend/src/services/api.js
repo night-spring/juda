@@ -24,6 +24,12 @@ const request = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
+  // Automatically inject cached Firebase Auth ID token
+  const token = localStorage.getItem('juda_firebase_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const config = {
     ...options,
     headers,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Database, Plus, ShieldCheck, PanelLeftClose, Trash2, Check, X, Home } from 'lucide-react';
+import { Database, Plus, ShieldCheck, PanelLeftClose, Trash2, Check, X, Home, LogOut } from 'lucide-react';
 
-export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSelectSession, onResetSession, onDeleteSession, onBackToLanding, sessions = [] }) {
+export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSelectSession, onResetSession, onDeleteSession, onBackToLanding, sessions = [], user = null, onSignOut }) {
   const [deletingSessionId, setDeletingSessionId] = useState(null); // Track session pending deletion
 
   const startDeleteFlow = (e, sessionId) => {
@@ -29,11 +29,12 @@ export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSe
       flexDirection: 'column',
       height: '100vh',
       padding: '16px 12px',
-      background: '#F9F9FB',
+      background: 'rgba(255, 255, 255, 0.45)',
+      backdropFilter: 'blur(20px)',
       color: 'var(--text-primary)',
       overflowY: 'auto',
       fontFamily: 'var(--font-sans)',
-      borderRight: '1px solid var(--border-color)',
+      borderRight: '1px solid rgba(255, 255, 255, 0.3)',
       boxShadow: 'none',
       flexShrink: 0,
       position: 'relative',
@@ -106,7 +107,8 @@ export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSe
           alignItems: 'center',
           gap: '10px',
           width: '100%',
-          background: '#FFFFFF',
+          background: 'rgba(255, 255, 255, 0.55)',
+          backdropFilter: 'blur(4px)',
           border: '1px solid var(--border-color)',
           color: 'var(--text-primary)',
           padding: '10px 14px',
@@ -120,11 +122,11 @@ export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSe
           boxShadow: 'var(--shadow-sm)'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)';
-          e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+          e.currentTarget.style.borderColor = 'var(--primary-accent)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#FFFFFF';
+          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.55)';
           e.currentTarget.style.borderColor = 'var(--border-color)';
         }}
       >
@@ -369,6 +371,99 @@ export default function HistorySidebar({ isOpen, onToggle, activeSessionId, onSe
           </div>
         )}
       </div>
+
+      {/* User Profile Card (if authenticated) */}
+      {user && (
+        <>
+          <div style={{ height: '1px', background: 'var(--border-color)', margin: '12px 0 8px' }} />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '8px 10px',
+            borderRadius: '8px',
+            background: 'rgba(255, 255, 255, 0.55)',
+            backdropFilter: 'blur(4px)',
+            border: '1px solid var(--border-color)',
+            marginBottom: '4px',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            {user.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt="Avatar" 
+                style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+              />
+            ) : (
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'var(--primary-accent-light)',
+                color: 'var(--primary-accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.85rem',
+                fontWeight: '700'
+              }}>
+                {(user.displayName || user.email || 'U')[0].toUpperCase()}
+              </div>
+            )}
+            
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{
+                fontSize: '0.78rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {user.displayName || user.email.split('@')[0]}
+              </span>
+              <span style={{
+                fontSize: '0.68rem',
+                color: 'var(--text-muted)',
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {user.email}
+              </span>
+            </div>
+
+            <button
+              onClick={onSignOut}
+              title="Sign Out"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+                e.currentTarget.style.color = 'var(--color-danger)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Divider */}
       <div style={{ height: '1px', background: 'var(--border-color)', margin: '12px 0' }} />

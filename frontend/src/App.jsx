@@ -4,7 +4,9 @@ import HistorySidebar from './components/HistorySidebar';
 import Dropzone from './components/Dropzone';
 import ChatBot from './components/ChatBot';
 import SaaSLandingPage from './components/SaaSLandingPage';
+import Auth from './components/Auth';
 import { api } from './services/api';
+import { auth, onAuthStateChanged, signOut } from './services/firebase';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -14,16 +16,74 @@ export default function App() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState('landing'); // 'landing' or 'workspace'
+  const [currentView, setCurrentView] = useState('landing'); // 'landing', 'auth', or 'workspace'
+  
+  // Authentication states
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  // Load history from backend and sync/fallback to localStorage on startup
+  // Monitor Firebase Auth State Changes on mount
   useEffect(() => {
+    if (!auth) {
+      // Mock Client mode: restore session user if cached
+      const savedUser = localStorage.getItem('juda_firebase_user');
+      const savedToken = localStorage.getItem('juda_firebase_token');
+      if (savedUser && savedToken) {
+        try {
+          setUser(JSON.parse(savedUser));
+          setToken(savedToken);
+        } catch (e) {
+          setUser(null);
+          setToken(null);
+        }
+      }
+      setAuthLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setAuthLoading(true);
+      if (currentUser) {
+        try {
+          const idToken = await currentUser.getIdToken();
+          setUser(currentUser);
+          setToken(idToken);
+          localStorage.setItem('juda_firebase_token', idToken);
+          localStorage.setItem('juda_firebase_user', JSON.stringify({
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL
+          }));
+        } catch (e) {
+          console.error("Failed to acquire Firebase Token:", e);
+        }
+      } else {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('juda_firebase_token');
+        localStorage.removeItem('juda_firebase_user');
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Load history from backend whenever token or sandbox state changes
+  useEffect(() => {
+    if (!token && !isSandboxMode) {
+      setSessionsHistory([]);
+      return;
+    }
+
     const loadHistory = async () => {
       try {
         const backendSessions = await api.getSessions();
         if (backendSessions && Array.isArray(backendSessions)) {
           setSessionsHistory(backendSessions);
-          localStorage.setItem('juda_saved_sessions', JSON.stringify(backendSessions));
+          localStorage.setItem(`juda_saved_sessions_${user?.uid || 'guest'}`, JSON.stringify(backendSessions));
           return;
         }
       } catch (err) {
@@ -31,7 +91,7 @@ export default function App() {
       }
 
       // Fallback to localStorage if backend fetch fails or is offline
-      const savedSessions = localStorage.getItem('juda_saved_sessions');
+      const savedSessions = localStorage.getItem(`juda_saved_sessions_${user?.uid || 'guest'}`);
       if (savedSessions) {
         try {
           setSessionsHistory(JSON.parse(savedSessions));
@@ -42,7 +102,7 @@ export default function App() {
     };
 
     loadHistory();
-  }, []);
+  }, [token, isSandboxMode]);
 
   const fetchDatasetDetails = async (sessionId, activeSession) => {
     setIsLoadingSummary(true);
@@ -72,6 +132,23 @@ export default function App() {
     }
   };
 
+  // Restore active session whenever user changes (e.g. login or reload)
+  useEffect(() => {
+    if (user) {
+      setCurrentView('workspace');
+      const savedActiveSession = localStorage.getItem(`juda_active_session_${user.uid}`);
+      if (savedActiveSession) {
+        try {
+          const activeSession = JSON.parse(savedActiveSession);
+          setSession(activeSession);
+          fetchDatasetDetails(activeSession.session_id, activeSession);
+        } catch (e) {
+          console.warn("Failed to parse saved active session:", e);
+        }
+      }
+    }
+  }, [user]);
+
   const handleUploadSuccess = (uploadData) => {
     const newSession = {
       session_id: uploadData.session_id,
@@ -86,10 +163,13 @@ export default function App() {
     ].slice(0, 15);
 
     setSessionsHistory(updatedHistory);
-    localStorage.setItem('juda_saved_sessions', JSON.stringify(updatedHistory));
+    localStorage.setItem(`juda_saved_sessions_${user?.uid || 'guest'}`, JSON.stringify(updatedHistory));
     
     setIsSandboxMode(false);
     setSession(newSession);
+    if (user) {
+      localStorage.setItem(`juda_active_session_${user.uid}`, JSON.stringify(newSession));
+    }
     setCurrentView('workspace');
     fetchDatasetDetails(uploadData.session_id, newSession);
   };
@@ -97,6 +177,9 @@ export default function App() {
   const handleSelectSession = (selectedSession) => {
     setIsSandboxMode(false);
     setSession(selectedSession);
+    if (user) {
+      localStorage.setItem(`juda_active_session_${user.uid}`, JSON.stringify(selectedSession));
+    }
     setCurrentView('workspace');
     fetchDatasetDetails(selectedSession.session_id, selectedSession);
   };
@@ -105,16 +188,19 @@ export default function App() {
     setSession(null);
     setDatasetInfo(null);
     setIsSandboxMode(false);
+    if (user) {
+      localStorage.removeItem(`juda_active_session_${user.uid}`);
+    }
   };
 
   const handleDeleteSession = async (sessionIdToDelete) => {
     // 1. Optimistic UI Update: remove from session history array & localStorage instantly
     const updatedHistory = sessionsHistory.filter(s => s.session_id !== sessionIdToDelete);
     setSessionsHistory(updatedHistory);
-    localStorage.setItem('juda_saved_sessions', JSON.stringify(updatedHistory));
+    localStorage.setItem(`juda_saved_sessions_${user?.uid || 'guest'}`, JSON.stringify(updatedHistory));
 
-    // 2. Clear cached chat messages in browser
-    localStorage.removeItem(`juda_chat_${sessionIdToDelete}`);
+    // 2. Clear cached chat messages in browser for this user
+    localStorage.removeItem(`juda_chat_${user?.uid || 'guest'}_${sessionIdToDelete}`);
 
     // 3. Reset active workspace if we deleted the current active session
     if (session?.session_id === sessionIdToDelete) {
@@ -151,20 +237,108 @@ export default function App() {
     setCurrentView('landing');
   };
 
+  const handleAuthSuccess = (authUser, userToken) => {
+    setUser(authUser);
+    setToken(userToken);
+    localStorage.setItem('juda_firebase_token', userToken);
+    localStorage.setItem('juda_firebase_user', JSON.stringify({
+      uid: authUser.uid,
+      email: authUser.email,
+      displayName: authUser.displayName,
+      photoURL: authUser.photoURL
+    }));
+    setCurrentView('workspace');
+    
+    // Restore active session if any
+    const savedActiveSession = localStorage.getItem(`juda_active_session_${authUser.uid}`);
+    if (savedActiveSession) {
+      try {
+        const activeSession = JSON.parse(savedActiveSession);
+        setSession(activeSession);
+        fetchDatasetDetails(activeSession.session_id, activeSession);
+      } catch (e) {
+        console.warn("Failed to parse saved active session:", e);
+      }
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error("Firebase Sign-Out failure:", err);
+      }
+    }
+    if (user) {
+      localStorage.removeItem(`juda_saved_sessions_${user.uid}`);
+      localStorage.removeItem(`juda_active_session_${user.uid}`);
+    }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('juda_firebase_token');
+    localStorage.removeItem('juda_firebase_user');
+    setSessionsHistory([]);
+    setSession(null);
+    setDatasetInfo(null);
+    setIsSandboxMode(false);
+    setCurrentView('landing');
+  };
+
   if (currentView === 'landing') {
-    return <SaaSLandingPage onLaunchWorkspace={() => setCurrentView('workspace')} />;
+    return (
+      <SaaSLandingPage 
+        onLaunchWorkspace={() => {
+          if (user || isSandboxMode) {
+            setCurrentView('workspace');
+          } else {
+            setCurrentView('auth');
+          }
+        }} 
+        onLogin={() => {
+          setCurrentView('auth');
+        }}
+        isLoggedIn={!!user}
+      />
+    );
+  }
+
+  if (currentView === 'auth') {
+    return (
+      <Auth 
+        onAuthSuccess={handleAuthSuccess}
+        onActivateSandbox={() => {
+          setIsSandboxMode(true);
+          setCurrentView('workspace');
+          setDatasetInfo({
+            filename: 'synthetic_marketing_data.csv',
+            row_count: 1420,
+            col_count: 8,
+            columns: ['customer_id', 'age', 'annual_income', 'spending_score', 'gender', 'membership_years', 'preferred_category', 'churned'],
+            numerical_columns: ['age', 'annual_income', 'spending_score', 'membership_years'],
+            categorical_columns: ['gender', 'preferred_category', 'churned'],
+            not_useful_columns: ['customer_id'],
+            missing_values: { customer_id: 0, age: 12, annual_income: 0, spending_score: 4, gender: 0, membership_years: 0, preferred_category: 0, churned: 0 },
+            duplicates: 3
+          });
+        }}
+      />
+    );
   }
 
   return (
-    <div className="app-container" style={{
+    <div className="app-container workspace-container-backdrop" style={{
       display: 'flex',
       flexDirection: 'row',
       minHeight: '100vh',
-      background: 'var(--bg-main)',
-      color: 'var(--text-secondary)',
-      position: 'relative',
-      overflow: 'hidden'
+      zIndex: 1
     }}>
+      
+      {/* Soft floating aurora blobs in workspace background for premium cohesive SaaS visual style */}
+      <div className="bg-gradient-blobs" style={{ opacity: 0.7, zIndex: 0 }}>
+        <div className="blob blob-1" style={{ top: '-10%', right: '10%' }}></div>
+        <div className="blob blob-3" style={{ bottom: '10%', left: '10%' }}></div>
+      </div>
       
       {/* Sidebar Controls (White, ChatGPT-style, full height) */}
       <HistorySidebar 
@@ -176,6 +350,8 @@ export default function App() {
         onResetSession={handleReset}
         onDeleteSession={handleDeleteSession}
         onBackToLanding={handleBackToLanding}
+        user={user}
+        onSignOut={handleSignOut}
       />
 
       {/* Floating Expand Sidebar Button (ChatGPT style, visible only when collapsed) */}
@@ -288,13 +464,11 @@ export default function App() {
           }}>
             
             {/* Top Workspace Bar */}
-            <div className="glass-panel" style={{
+            <div className="workspace-glass-panel" style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '16px 24px',
-              background: '#FFFFFF',
-              borderRadius: '12px'
+              padding: '16px 24px'
             }}>
               <div>
                 <span style={{
@@ -353,7 +527,7 @@ export default function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', height: '100%', minHeight: 0 }}>
                 
                 {/* Profile Summary Card */}
-                <div className="glass-panel" style={{ padding: '20px', background: '#FFFFFF' }}>
+                <div className="workspace-glass-panel" style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Layers size={14} style={{ color: 'var(--primary-accent)' }} />
                     Data Profiler Summary
@@ -385,7 +559,7 @@ export default function App() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>Uninformative (ID) Columns</span>
                         <span style={{ color: 'var(--color-warning)', fontWeight: '600' }}>
-                          {datasetInfo?.not_useful_columns?.length}
+                           {datasetInfo?.not_useful_columns?.length}
                         </span>
                       </div>
                     )}
@@ -393,9 +567,8 @@ export default function App() {
                 </div>
 
                 {/* Columns List Card */}
-                <div className="glass-panel" style={{
+                <div className="workspace-glass-panel" style={{
                   padding: '20px', 
-                  background: '#FFFFFF',
                   display: 'flex',
                   flexDirection: 'column',
                   flex: 1,
@@ -421,7 +594,8 @@ export default function App() {
 
                       return (
                         <div key={col} style={{
-                          background: 'var(--bg-main)',
+                          background: 'rgba(255, 255, 255, 0.45)',
+                          backdropFilter: 'blur(4px)',
                           border: '1px solid var(--border-color)',
                           borderRadius: '6px',
                           padding: '8px 10px',
@@ -479,6 +653,7 @@ export default function App() {
                   sessionId={session?.session_id}
                   datasetInfo={datasetInfo}
                   onDeleteSession={handleDeleteSession}
+                  user={user}
                 />
               </div>
 

@@ -157,7 +157,7 @@ function MockDistributions() {
   );
 }
 
-export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
+export default function ChatBot({ sessionId, datasetInfo, onDeleteSession, user }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -214,7 +214,7 @@ export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
             }));
             setMessages(formattedHistory);
             loadedSessionIdRef.current = sessionId;
-            localStorage.setItem(`juda_chat_${sessionId}`, JSON.stringify(formattedHistory));
+            localStorage.setItem(`juda_chat_${user?.uid || 'guest'}_${sessionId}`, JSON.stringify(formattedHistory));
             return;
           }
         } catch (err) {
@@ -222,7 +222,7 @@ export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
         }
 
         // Fallback to localStorage or welcome message
-        const savedHistory = localStorage.getItem(`juda_chat_${sessionId}`);
+        const savedHistory = localStorage.getItem(`juda_chat_${user?.uid || 'guest'}_${sessionId}`);
         if (savedHistory) {
           try {
             setMessages(JSON.parse(savedHistory));
@@ -256,7 +256,7 @@ export default function ChatBot({ sessionId, datasetInfo, onDeleteSession }) {
 
   const saveChatHistory = (updatedMessages) => {
     if (sessionId) {
-      localStorage.setItem(`juda_chat_${sessionId}`, JSON.stringify(updatedMessages));
+      localStorage.setItem(`juda_chat_${user?.uid || 'guest'}_${sessionId}`, JSON.stringify(updatedMessages));
     }
   };
 
@@ -372,7 +372,7 @@ Is there any specific data science or machine learning question I can help you w
       } else {
         // Fallback
         setMessages([]);
-        localStorage.removeItem(`juda_chat_${sessionId}`);
+        localStorage.removeItem(`juda_chat_${user?.uid || 'guest'}_${sessionId}`);
         try {
           await api.clearChatHistory(sessionId);
         } catch (err) {
@@ -393,15 +393,13 @@ Is there any specific data science or machine learning question I can help you w
   ];
 
   return (
-    <div className="glass-panel chat-container" style={{
+    <div className="workspace-glass-panel chat-container" style={{
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
       minHeight: 0,
       overflow: 'hidden',
-      position: 'relative',
-      background: 'var(--bg-card)',
-      boxShadow: 'var(--shadow-sm)'
+      position: 'relative'
     }}>
       
       {/* Header */}
@@ -411,7 +409,8 @@ Is there any specific data science or machine learning question I can help you w
         justifyContent: 'space-between',
         padding: '16px 20px',
         borderBottom: '1px solid var(--border-color)',
-        background: '#FFFFFF'
+        background: 'rgba(255, 255, 255, 0.35)',
+        backdropFilter: 'blur(8px)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
@@ -538,7 +537,8 @@ Is there any specific data science or machine learning question I can help you w
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
-        background: '#FCFCFB'
+        background: 'rgba(255, 255, 255, 0.18)',
+        backdropFilter: 'blur(12px)'
       }}>
         {messages.map((msg, index) => {
           const isAI = msg.role === 'assistant';
@@ -645,7 +645,8 @@ Is there any specific data science or machine learning question I can help you w
 
                             const baseUrl = getApiBaseUrl();
                             const relativePath = src.startsWith('/') ? src : `/${src}`;
-                            const fullSrc = `${baseUrl}/api/v1${relativePath}`;
+                            const token = localStorage.getItem('juda_firebase_token');
+                            const fullSrc = `${baseUrl}/api/v1${relativePath}${token ? `?token=${token}` : ''}`;
 
                             return (
                               <div 
@@ -783,7 +784,8 @@ Is there any specific data science or machine learning question I can help you w
       {messages.length <= 1 && (
         <div style={{
           padding: '12px 20px',
-          background: '#FCFCFB',
+          background: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(8px)',
           borderTop: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
@@ -851,7 +853,8 @@ Is there any specific data science or machine learning question I can help you w
       <div style={{
         padding: '16px 20px 20px',
         borderTop: '1px solid var(--border-color)',
-        background: '#FFFFFF',
+        background: 'rgba(255, 255, 255, 0.35)',
+        backdropFilter: 'blur(10px)',
         position: 'relative'
       }}>
         <div style={{
